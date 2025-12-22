@@ -1,7 +1,4 @@
 def create_chunks(text, chunk_size=400, overlap=80):
-    """
-    Word-based chunking with overlap.
-    """
     words = text.split()
     chunks = []
 
