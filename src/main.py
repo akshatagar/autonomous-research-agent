@@ -4,7 +4,7 @@ from utils.text_cleaning import clean_text
 from utils.chunking import create_chunks
 from utils.embeddings import embed_texts, cosine_search
 from sklearn.cluster import KMeans
-from utils.summarizer import summarize
+from utils.agent import summarize, report
 
 def research_agent(query):
     urls = search(query)
@@ -67,21 +67,14 @@ for chunk_id, cluster_id in enumerate(cluster_assignment):
 #     print(cluster)
 #     print("")
 
-prompt = """
-Given the following passages, which all discuss related aspects of a broader topic: 
-1) Identify the single main theme that connects them.
-2) Produce a short, specific title (max 8 words).
-3) Write a 3-5 sentence summary capturing the core ideas.
-Do not introduce information that is not present in the passages.
-Avoid repeating the same idea in different wording.
-"""
-
 for i, cluster in enumerate(clusters):
     cluster.sort(key=lambda x: x[1], reverse=True)
     clusters[i] = cluster[:3]
     clusters[i] = list(map(lambda x: f"\n{top_chunks[x[0]]['title']}:\n{all_chunks[top_chunks[x[0]]['chunk_index']]}", clusters[i]))
     clusters[i] = "\n\n".join(clusters[i])
-    clusters[i] = summarize(clusters[i], prompt)
+    clusters[i] = summarize(clusters[i])
     print(f"\n=== Cluster {i + 1} Summary ===")
     print(clusters[i])
 
+report_text = "\n\n".join(clusters)
+print(report(report_text))
