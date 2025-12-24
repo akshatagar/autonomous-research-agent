@@ -73,8 +73,6 @@ for i, cluster in enumerate(clusters):
     clusters[i] = list(map(lambda x: f"\n{top_chunks[x[0]]['title']}:\n{all_chunks[top_chunks[x[0]]['chunk_index']]}", clusters[i]))
     clusters[i] = "\n\n".join(clusters[i])
     clusters[i] = summarize(clusters[i])
-    print(f"\n=== Cluster {i + 1} Summary ===")
-    print(clusters[i])
 
 report_text = "\n\n".join(clusters)
 print(report(report_text))

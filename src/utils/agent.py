@@ -94,7 +94,7 @@ def report(text, prompt=report_prompt):
             },
             {"role": "user", "content": f"{prompt}\n\n{text}"}
         ],
-        max_completion_tokens=400,
+        max_completion_tokens=1200,
         temperature=0.2
     )
     return response.choices[0].message.content
