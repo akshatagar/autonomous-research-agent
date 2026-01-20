@@ -1,35 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { runResearch } from "./api";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [query, setQuery] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleRun = async () => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const data = await runResearch(query);
+      setResult(data.response);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ padding: 40, fontFamily: "sans-serif" }}>
+      <h1>Autonomous Research Agent</h1>
+
+      <textarea
+        rows={4}
+        style={{ width: "100%", marginBottom: 12 }}
+        placeholder="Enter research question..."
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+
+      <button onClick={handleRun} disabled={loading || !query}>
+        {loading ? "Running Research..." : "Run Research"}
+      </button>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      {result && (
+        <pre style={{ marginTop: 20, whiteSpace: "pre-wrap" }}>
+          {result}
+        </pre>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
