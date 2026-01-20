@@ -1,13 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from models.api import ResearchResponse, ResearchRequest
+from api.routes import router as research_router
 
 app = FastAPI(
     title="Autonomous Research Agent",
-    description="api to generate research reports",
+    description="API to generate research reports",
     version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
 )
 
 app.add_middleware(
@@ -18,13 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/health")
-def health():
-    return { "status": "ok" }
+app.include_router(research_router)
 
-@app.post("/research", response_model=ResearchResponse)
-def research(req: ResearchRequest):
-    return ResearchResponse(
-        response=f"Stubbed research response for query: {req.query}"
-    )
-
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
