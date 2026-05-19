@@ -1,7 +1,13 @@
 from pydantic import BaseModel
 
-class ResearchRequest(BaseModel):
+class ClustersRequest(BaseModel):
     query: str
 
-class ResearchResponse(BaseModel):
+class ClustersResponse(BaseModel):
+    response: list
+
+class ReportRequest(BaseModel):
+    clusters: list
+
+class ReportResponse(BaseModel):
     response: str

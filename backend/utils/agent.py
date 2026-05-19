@@ -67,8 +67,7 @@ def summarize(text, prompt=summarize_prompt):
                 "role": "system",
                 "content": (
                     "You are an expert research analyst summarizing technical material. "
-                    "Your task is to identify the shared theme across multiple passages "
-                    "and produce a concise, accurate summary."
+                    "Your task is to produce a concise, accurate summary."
                 )
             },
             {"role": "user", "content": f"{prompt}\n\n{text}"}

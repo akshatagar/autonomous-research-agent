@@ -1,22 +1,35 @@
 import { useState } from "react";
-import { runResearch } from "./api";
+import { getClusters, getReport } from "./api";
 
 function App() {
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState(null);
+  const [clusters, setClusters] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [selectedClusters, setSelectedClusters] = useState([]);
+  const [report, setReport] = useState(null);
 
-  const handleRun = async () => {
+  const handleGetClusters = async () => {
     setLoading(true);
-    setError(null);
-    setResult(null);
+    setClusters(null);
+    setSelectedClusters([]);
 
     try {
-      const data = await runResearch(query);
-      setResult(data.response);
+      const clusters = await getClusters(query);
+      setClusters(clusters);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGetReport = async () => {
+    setLoading(true);
+    try {
+      const result = await getReport(selectedClusters);
+      setReport(result);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -34,15 +47,61 @@ function App() {
         onChange={(e) => setQuery(e.target.value)}
       />
 
-      <button onClick={handleRun} disabled={loading || !query}>
-        {loading ? "Running Research..." : "Run Research"}
+      <button onClick={handleGetClusters} disabled={loading || !query}>
+        {loading ? "Getting Clusters..." : "Get Clusters"}
       </button>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {clusters && clusters.length > 0 && (
+        <>
+          <p style={{ marginTop: 16 }}>Choose one or more clusters:</p>
 
-      {result && (
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: "12px 0",
+            }}
+          >
+            {clusters.map((cluster, index) => (
+              <li key={index} style={{ marginBottom: 8 }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 8,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedClusters.includes(cluster)}
+                    onChange={() => {
+                      setSelectedClusters((prev) =>
+                        prev.includes(cluster)
+                          ? prev.filter((c) => c !== cluster)
+                          : [...prev, cluster]
+                      );
+                    }}
+                  />
+                  <span>Cluster {index + 1}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+
+          <button
+            onClick={handleGetReport}
+            disabled={loading || selectedClusters.length === 0}
+            style={{ marginTop: 8 }}
+          >
+            {loading ? "Getting Report..." : "Get Report"}
+          </button>
+        </>
+      )}
+
+      {report && (
         <pre style={{ marginTop: 20, whiteSpace: "pre-wrap" }}>
-          {result}
+          {report}
         </pre>
       )}
     </div>

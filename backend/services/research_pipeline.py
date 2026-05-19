@@ -6,7 +6,7 @@ from utils.embeddings import embed_texts, cosine_search
 from sklearn.cluster import KMeans
 from utils.agent import summarize, report
 
-def run_pipeline(query):
+def create_clusters(query):
     urls = search(query)
     docs = scrape(urls)
     for doc in docs:
@@ -70,5 +70,8 @@ def run_pipeline(query):
         clusters[i] = "\n\n".join(clusters[i])
         clusters[i] = summarize(clusters[i])
 
+    return clusters
+
+def create_report(clusters):
     report_text = "\n\n".join(clusters)
     return report(report_text)
