@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { getClusters, getReport } from "./api";
 
+function parseClusterTitle(text) {
+  const titleMatch = text.match(/CLUSTER_TITLE:\s*(.+)/i);
+  return titleMatch?.[1]?.trim();
+}
+
 function App() {
   const [query, setQuery] = useState("");
   const [clusters, setClusters] = useState(null);
@@ -39,7 +44,7 @@ function App() {
     <div style={{ padding: 40, fontFamily: "sans-serif" }}>
       <h1>Autonomous Research Agent</h1>
 
-      <textarea
+      {!clusters && <><textarea
         rows={4}
         style={{ width: "100%", marginBottom: 12 }}
         placeholder="Enter research question..."
@@ -49,47 +54,67 @@ function App() {
 
       <button onClick={handleGetClusters} disabled={loading || !query}>
         {loading ? "Getting Clusters..." : "Get Clusters"}
-      </button>
+      </button> </>}
 
       {clusters && clusters.length > 0 && (
         <>
-          <p style={{ marginTop: 16 }}>Choose one or more clusters:</p>
+          <p style={{ marginTop: 16 }}>
+            Select the topics you want included in your report:
+          </p>
 
           <ul
             style={{
               listStyle: "none",
               padding: 0,
-              margin: "12px 0",
+              margin: "0 auto",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, 300px 300px)",
+              marginBottom: 50,
+              gap: 35,
             }}
           >
-            {clusters.map((cluster, index) => (
-              <li key={index} style={{ marginBottom: 8 }}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 8,
-                    cursor: "pointer",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedClusters.includes(cluster)}
-                    onChange={() => {
-                      setSelectedClusters((prev) =>
-                        prev.includes(cluster)
-                          ? prev.filter((c) => c !== cluster)
-                          : [...prev, cluster]
-                      );
+            {clusters.map((cluster, index) => {
+              const title = parseClusterTitle(cluster);
+              const isSelected = selectedClusters.includes(cluster);
+
+              return (
+                <li key={index}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      height: "100%",
+                      padding: 12,
+                      border: `1px solid ${isSelected ? "#646cff" : "#444"}`,
+                      borderRadius: 8,
+                      backgroundColor: isSelected
+                        ? "rgba(100, 108, 255, 0.08)"
+                        : "transparent",
+                      cursor: "pointer",
                     }}
-                  />
-                  <span>Cluster {index + 1}</span>
-                </label>
-              </li>
-            ))}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {
+                        setSelectedClusters((prev) =>
+                          prev.includes(cluster)
+                            ? prev.filter((c) => c !== cluster)
+                            : [...prev, cluster]
+                        );
+                      }}
+                    />
+                    <span style={{ fontWeight: 600 }}>
+                      {title || `Topic ${index + 1}`}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
           </ul>
 
-          <button
+          <button 
             onClick={handleGetReport}
             disabled={loading || selectedClusters.length === 0}
             style={{ marginTop: 8 }}
@@ -108,4 +133,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; 
