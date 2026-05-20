@@ -13,6 +13,13 @@ function App() {
   const [selectedClusters, setSelectedClusters] = useState([]);
   const [report, setReport] = useState(null);
 
+  const backButton = async () => {
+    setLoading(false)
+    setClusters(null)
+    setReport(null)
+    setSelectedClusters([])
+  }
+
   const handleGetClusters = async () => {
     setLoading(true);
     setClusters(null);
@@ -58,6 +65,10 @@ function App() {
 
       {clusters && clusters.length > 0 && (
         <>
+          <button onClick={backButton}>
+            Back
+          </button>
+
           <p style={{ marginTop: 16 }}>
             Select the topics you want included in your report:
           </p>
