@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getClusters, getReport } from "./api";
+import ReportDisplay from "./ReportDisplay";
 
 function parseClusterTitle(text) {
   const titleMatch = text.match(/CLUSTER_TITLE:\s*(.+)/i);
@@ -135,11 +136,7 @@ function App() {
         </>
       )}
 
-      {report && (
-        <pre style={{ marginTop: 20, whiteSpace: "pre-wrap" }}>
-          {report}
-        </pre>
-      )}
+      {report && <ReportDisplay content={report} />}
     </div>
   );
 }
