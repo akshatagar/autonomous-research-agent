@@ -24,61 +24,69 @@ function LoginPage({ onLogin }) {
     }
   };
 
-  const inputStyle = {
-    display: "block",
-    width: "100%",
-    marginBottom: 12,
-    padding: "8px 12px",
-    fontSize: 14,
-    borderRadius: 6,
-    border: "1px solid #444",
-    background: "#1a1a1a",
-    color: "#fff",
-    boxSizing: "border-box",
+  const switchMode = () => {
+    setMode((m) => (m === "login" ? "register" : "login"));
+    setError(null);
   };
 
   return (
-    <div style={{ padding: 40, fontFamily: "sans-serif", maxWidth: 400, margin: "80px auto" }}>
-      <h1 style={{ marginBottom: 8 }}>Autonomous Research Agent</h1>
-      <h2 style={{ fontWeight: 400, marginBottom: 24, color: "#aaa" }}>
-        {mode === "login" ? "Log in to your account" : "Create an account"}
-      </h2>
+    <div className="login-page">
+      <div className="login-card">
+        <p className="login-brand">Research <em>Agent</em></p>
+        <p className="login-tagline">AI-powered research reports in minutes.</p>
+        <hr className="login-divider" />
 
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={inputStyle}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-        style={inputStyle}
-      />
+        <p className="login-form-title">
+          {mode === "login" ? "Welcome back" : "Create an account"}
+        </p>
 
-      {error && <p style={{ color: "#ff6b6b", marginBottom: 12, fontSize: 14 }}>{error}</p>}
+        <div className="form-group">
+          <label className="form-label" htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            className="form-input"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+        </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={loading || !email || !password}
-        style={{ width: "100%", marginBottom: 12 }}
-      >
-        {loading ? "..." : mode === "login" ? "Log In" : "Create Account"}
-      </button>
+        <div className="form-group">
+          <label className="form-label" htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            className="form-input"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && email && password && !loading && handleSubmit()}
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+          />
+        </div>
 
-      <p style={{ textAlign: "center", color: "#888", fontSize: 14 }}>
-        {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+        {error && <div className="form-error">{error}</div>}
+
         <button
-          onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(null); }}
-          style={{ background: "none", border: "none", color: "#646cff", cursor: "pointer", padding: 0, fontSize: 14 }}
+          className="btn btn-primary"
+          style={{ width: "100%", justifyContent: "center", marginTop: 4 }}
+          onClick={handleSubmit}
+          disabled={loading || !email || !password}
         >
-          {mode === "login" ? "Register" : "Log In"}
+          {loading
+            ? <span className="loading-pulse">Please wait…</span>
+            : mode === "login" ? "Log In" : "Create Account"}
         </button>
-      </p>
+
+        <div className="login-toggle">
+          {mode === "login" ? "Don't have an account?" : "Already have an account?"}
+          <button onClick={switchMode}>
+            {mode === "login" ? "Register" : "Log In"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import ReportDisplay from "./ReportDisplay";
 import LoginPage from "./LoginPage";
 
 function parseClusterTitle(text) {
-  const titleMatch = text.match(/CLUSTER_TITLE:\s*(.+)/i);
-  return titleMatch?.[1]?.trim();
+  const m = text.match(/CLUSTER_TITLE:\s*(.+)/i);
+  return m?.[1]?.trim();
 }
 
 function App() {
@@ -19,16 +19,10 @@ function App() {
   const [historyReport, setHistoryReport] = useState(null);
 
   useEffect(() => {
-    if (token) {
-      getReports()
-        .then(setHistory)
-        .catch(() => {});
-    }
+    if (token) getReports().then(setHistory).catch(() => {});
   }, [token]);
 
-  const handleLogin = (newToken) => {
-    setToken(newToken);
-  };
+  const handleLogin = (newToken) => setToken(newToken);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -40,7 +34,7 @@ function App() {
     setHistoryReport(null);
   };
 
-  const backButton = () => {
+  const reset = () => {
     setLoading(false);
     setClusters(null);
     setReport(null);
@@ -67,8 +61,7 @@ function App() {
     try {
       const result = await getReport(selectedClusters, query);
       setReport(result);
-      const updated = await getReports();
-      setHistory(updated);
+      getReports().then(setHistory).catch(() => {});
     } catch (err) {
       console.error(err);
     } finally {
@@ -76,149 +69,162 @@ function App() {
     }
   };
 
+  const toggleCluster = (cluster) => {
+    setSelectedClusters((prev) =>
+      prev.includes(cluster) ? prev.filter((c) => c !== cluster) : [...prev, cluster]
+    );
+  };
+
   if (!token) return <LoginPage onLogin={handleLogin} />;
 
-  const onLandingPage = !clusters && !report && !historyReport;
+  const onLanding = !clusters && !report && !historyReport;
 
   return (
-    <div style={{ padding: 40, fontFamily: "sans-serif" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h1 style={{ margin: 0 }}>Autonomous Research Agent</h1>
-        <button onClick={handleLogout} style={{ background: "none", border: "1px solid #444", color: "#aaa", cursor: "pointer", padding: "6px 14px", borderRadius: 6 }}>
-          Log Out
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <nav className="navbar">
+        <span className="nav-brand">Research <em>Agent</em></span>
+        <button className="btn btn-outline-danger" onClick={handleLogout}>
+          Log out
         </button>
-      </div>
+      </nav>
 
-      {/* History report view */}
-      {historyReport && (
-        <>
-          <button onClick={backButton} style={{ marginBottom: 16 }}>Back</button>
-          <p style={{ color: "#888", fontSize: 14, marginBottom: 8 }}>
-            {historyReport.query} &mdash; {new Date(historyReport.created_at).toLocaleDateString()}
-          </p>
-          <ReportDisplay content={historyReport.content} />
-        </>
-      )}
+      <main className="main">
 
-      {/* Main research flow */}
-      {!historyReport && (
-        <>
-          {onLandingPage && (
-            <>
-              <textarea
-                rows={4}
-                style={{ width: "100%", marginBottom: 12 }}
-                placeholder="Enter research question..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <button onClick={handleGetClusters} disabled={loading || !query}>
-                {loading ? "Getting Clusters..." : "Get Clusters"}
-              </button>
-            </>
-          )}
+        {/* ── History report viewer ── */}
+        {historyReport && (
+          <>
+            <div className="report-view-header">
+              <button className="btn btn-ghost" onClick={reset}>← Back</button>
+              {historyReport.query && (
+                <span className="report-view-query">{historyReport.query}</span>
+              )}
+            </div>
+            <ReportDisplay content={historyReport.content} />
+          </>
+        )}
 
-          {clusters && clusters.length > 0 && (
-            <>
-              <button onClick={backButton}>Back</button>
-              <p style={{ marginTop: 16 }}>
-                Select the topics you want included in your report:
-              </p>
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: "0 auto",
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, 300px 300px)",
-                  marginBottom: 50,
-                  gap: 35,
-                }}
-              >
-                {clusters.map((cluster, index) => {
-                  const title = parseClusterTitle(cluster);
-                  const isSelected = selectedClusters.includes(cluster);
-                  return (
-                    <li key={index}>
+        {!historyReport && (
+          <>
+            {/* ── Landing: search ── */}
+            {onLanding && (
+              <div className="search-section">
+                <h1 className="search-heading">What do you want to research?</h1>
+                <p className="search-subheading">
+                  Enter a question or topic and we'll find relevant sources and generate a structured report.
+                </p>
+                <div className="search-form">
+                  <textarea
+                    className="search-input"
+                    rows={4}
+                    placeholder="e.g. How is AI being used in drug discovery?"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && query && !loading)
+                        handleGetClusters();
+                    }}
+                  />
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleGetClusters}
+                    disabled={loading || !query}
+                  >
+                    {loading ? <span className="loading-pulse">Finding topics…</span> : "Find Topics →"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Cluster selection ── */}
+            {clusters && clusters.length > 0 && (
+              <div className="clusters-section">
+                <div className="page-back-row">
+                  <button className="btn btn-ghost" onClick={reset}>← Back</button>
+                  <span className="page-back-label">Select topics to include in your report</span>
+                </div>
+
+                <div className="clusters-grid">
+                  {clusters.map((cluster, i) => {
+                    const title = parseClusterTitle(cluster);
+                    const selected = selectedClusters.includes(cluster);
+                    return (
                       <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          height: "100%",
-                          padding: 12,
-                          border: `1px solid ${isSelected ? "#646cff" : "#444"}`,
-                          borderRadius: 8,
-                          backgroundColor: isSelected ? "rgba(100, 108, 255, 0.08)" : "transparent",
-                          cursor: "pointer",
-                        }}
+                        key={i}
+                        className={`cluster-card${selected ? " cluster-card--selected" : ""}`}
                       >
                         <input
                           type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {
-                            setSelectedClusters((prev) =>
-                              prev.includes(cluster)
-                                ? prev.filter((c) => c !== cluster)
-                                : [...prev, cluster]
-                            );
-                          }}
+                          checked={selected}
+                          onChange={() => toggleCluster(cluster)}
                         />
-                        <span style={{ fontWeight: 600 }}>{title || `Topic ${index + 1}`}</span>
+                        <span className="cluster-card__title">{title || `Topic ${i + 1}`}</span>
                       </label>
-                    </li>
-                  );
-                })}
-              </ul>
-              <button
-                onClick={handleGetReport}
-                disabled={loading || selectedClusters.length === 0}
-                style={{ marginTop: 8 }}
-              >
-                {loading ? "Getting Report..." : "Get Report"}
-              </button>
-            </>
-          )}
+                    );
+                  })}
+                </div>
 
-          {report && (
-            <>
-              <button onClick={backButton}>Back</button>
-              <ReportDisplay content={report} />
-            </>
-          )}
-
-          {/* Past reports — only on landing page */}
-          {onLandingPage && history.length > 0 && (
-            <div style={{ marginTop: 48 }}>
-              <h2 style={{ fontSize: 18, marginBottom: 16 }}>Past Reports</h2>
-              <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-                {history.map((r) => (
-                  <li
-                    key={r.id}
-                    onClick={() => setHistoryReport(r)}
-                    style={{
-                      padding: "12px 16px",
-                      border: "1px solid #333",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#646cff")}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#333")}
+                <div className="clusters-footer">
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleGetReport}
+                    disabled={loading || selectedClusters.length === 0}
                   >
-                    <span style={{ fontWeight: 500 }}>{r.query || "Report"}</span>
-                    <span style={{ color: "#888", fontSize: 13 }}>
-                      {new Date(r.created_at).toLocaleDateString()}
+                    {loading
+                      ? <span className="loading-pulse">Generating report…</span>
+                      : `Generate Report (${selectedClusters.length} selected)`}
+                  </button>
+                  {selectedClusters.length > 0 && !loading && (
+                    <span className="clusters-selection-count">
+                      {selectedClusters.length} of {clusters.length} topics
                     </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </>
-      )}
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Report view ── */}
+            {report && (
+              <>
+                <div className="report-view-header">
+                  <button className="btn btn-ghost" onClick={reset}>← Back</button>
+                  {query && <span className="report-view-query">{query}</span>}
+                </div>
+                <ReportDisplay content={report} />
+              </>
+            )}
+
+            {/* ── History: shown on landing only ── */}
+            {onLanding && history.length > 0 && (
+              <div className="history-section">
+                <p className="history-heading">Recent Reports</p>
+                <ul className="history-list">
+                  {history.map((r) => (
+                    <li
+                      key={r.id}
+                      className="history-item"
+                      onClick={() => setHistoryReport(r)}
+                    >
+                      <span className="history-item__query">
+                        {r.query || "Untitled report"}
+                      </span>
+                      <div className="history-item__right">
+                        <span className="history-item__date">
+                          {new Date(r.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span className="history-item__arrow">›</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }
