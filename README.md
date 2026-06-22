@@ -42,6 +42,7 @@ Given a natural-language research question, the system:
 | Web Search       | Tavily API                |
 | Scraping         | BeautifulSoup             |
 | Clustering       | scikit-learn (K-Means)    |
+| Containerization | Docker, Docker Compose    |
 
 ---
 
@@ -49,7 +50,10 @@ Given a natural-language research question, the system:
 
 ```
 autonomous-research-agent/
+├── docker-compose.yml            # Orchestrates backend + Postgres
+├── .env.example                  # Required environment variables
 ├── backend/
+│   ├── dockerfile                # Backend container image
 │   ├── main.py                   # FastAPI app entry point
 │   ├── api/
 │   │   ├── auth.py               # /auth/register, /auth/login
