@@ -8,6 +8,28 @@ function parseClusterTitle(text) {
   return m?.[1]?.trim();
 }
 
+function Spinner() {
+  return <span className="btn-spinner" aria-hidden="true" />;
+}
+
+function ReportSkeleton() {
+  return (
+    <div className="skeleton">
+      <div className="skeleton-line skeleton-line--title" />
+      <div className="skeleton-line" />
+      <div className="skeleton-line skeleton-line--med" />
+      <div className="skeleton-line skeleton-line--short" />
+      <div className="skeleton-line" style={{ marginTop: 28 }} />
+      <div className="skeleton-line skeleton-line--med" />
+      <div className="skeleton-line" />
+      <div className="skeleton-line skeleton-line--short" />
+      <div className="skeleton-line" style={{ marginTop: 28 }} />
+      <div className="skeleton-line skeleton-line--med" />
+      <div className="skeleton-line skeleton-line--short" />
+    </div>
+  );
+}
+
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [query, setQuery] = useState("");
@@ -17,6 +39,8 @@ function App() {
   const [report, setReport] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyReport, setHistoryReport] = useState(null);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (token) getReports().then(setHistory).catch(() => {});
@@ -32,6 +56,7 @@ function App() {
     setReport(null);
     setSelectedClusters([]);
     setHistoryReport(null);
+    setError(null);
   };
 
   const reset = () => {
@@ -40,9 +65,11 @@ function App() {
     setReport(null);
     setSelectedClusters([]);
     setHistoryReport(null);
+    setError(null);
   };
 
   const handleGetClusters = async () => {
+    setError(null);
     setLoading(true);
     setClusters(null);
     setSelectedClusters([]);
@@ -50,20 +77,21 @@ function App() {
       const result = await getClusters(query);
       setClusters(result);
     } catch (err) {
-      console.error(err);
+      setError(err.message || "Failed to find topics. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGetReport = async () => {
+    setError(null);
     setLoading(true);
     try {
       const result = await getReport(selectedClusters, query);
       setReport(result);
       getReports().then(setHistory).catch(() => {});
     } catch (err) {
-      console.error(err);
+      setError(err.message || "Failed to generate report. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -75,9 +103,19 @@ function App() {
     );
   };
 
+  const handleCopy = () => {
+    const text = report ?? historyReport?.content;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   if (!token) return <LoginPage onLogin={handleLogin} />;
 
   const onLanding = !clusters && !report && !historyReport;
+  const isGenerating = loading && !!clusters && !report;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -98,6 +136,9 @@ function App() {
               {historyReport.query && (
                 <span className="report-view-query">{historyReport.query}</span>
               )}
+              <button className="btn btn-ghost" style={{ marginLeft: "auto" }} onClick={handleCopy}>
+                {copied ? "Copied!" : "Copy"}
+              </button>
             </div>
             <ReportDisplay content={historyReport.content} />
           </>
@@ -129,8 +170,9 @@ function App() {
                     onClick={handleGetClusters}
                     disabled={loading || !query}
                   >
-                    {loading ? <span className="loading-pulse">Finding topics…</span> : "Find Topics →"}
+                    {loading ? <><Spinner /> Finding topics</> : "Find Topics →"}
                   </button>
+                  {error && <div className="form-error">{error}</div>}
                 </div>
               </div>
             )}
@@ -141,44 +183,66 @@ function App() {
                 <div className="page-back-row">
                   <button className="btn btn-ghost" onClick={reset}>← Back</button>
                   <span className="page-back-label">Select topics to include in your report</span>
-                </div>
-
-                <div className="clusters-grid">
-                  {clusters.map((cluster, i) => {
-                    const title = parseClusterTitle(cluster);
-                    const selected = selectedClusters.includes(cluster);
-                    return (
-                      <label
-                        key={i}
-                        className={`cluster-card${selected ? " cluster-card--selected" : ""}`}
+                  {!isGenerating && (
+                    <div className="cluster-select-actions">
+                      <button
+                        className="btn btn-ghost"
+                        onClick={() => setSelectedClusters([...clusters])}
                       >
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={() => toggleCluster(cluster)}
-                        />
-                        <span className="cluster-card__title">{title || `Topic ${i + 1}`}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-
-                <div className="clusters-footer">
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleGetReport}
-                    disabled={loading || selectedClusters.length === 0}
-                  >
-                    {loading
-                      ? <span className="loading-pulse">Generating report…</span>
-                      : `Generate Report (${selectedClusters.length} selected)`}
-                  </button>
-                  {selectedClusters.length > 0 && !loading && (
-                    <span className="clusters-selection-count">
-                      {selectedClusters.length} of {clusters.length} topics
-                    </span>
+                        All
+                      </button>
+                      <button
+                        className="btn btn-ghost"
+                        onClick={() => setSelectedClusters([])}
+                      >
+                        None
+                      </button>
+                    </div>
                   )}
                 </div>
+
+                {isGenerating ? (
+                  <ReportSkeleton />
+                ) : (
+                  <>
+                    <div className="clusters-grid">
+                      {clusters.map((cluster, i) => {
+                        const title = parseClusterTitle(cluster);
+                        const selected = selectedClusters.includes(cluster);
+                        return (
+                          <label
+                            key={i}
+                            className={`cluster-card${selected ? " cluster-card--selected" : ""}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => toggleCluster(cluster)}
+                            />
+                            <span className="cluster-card__check" />
+                            <span className="cluster-card__title">{title || `Topic ${i + 1}`}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <div className="clusters-footer">
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleGetReport}
+                        disabled={selectedClusters.length === 0}
+                      >
+                        {`Generate Report (${selectedClusters.length} selected)`}
+                      </button>
+                      {selectedClusters.length > 0 && (
+                        <span className="clusters-selection-count">
+                          {selectedClusters.length} of {clusters.length} topics
+                        </span>
+                      )}
+                    </div>
+                    {error && <div className="form-error" style={{ marginTop: 12 }}>{error}</div>}
+                  </>
+                )}
               </div>
             )}
 
@@ -188,6 +252,9 @@ function App() {
                 <div className="report-view-header">
                   <button className="btn btn-ghost" onClick={reset}>← Back</button>
                   {query && <span className="report-view-query">{query}</span>}
+                  <button className="btn btn-ghost" style={{ marginLeft: "auto" }} onClick={handleCopy}>
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
                 </div>
                 <ReportDisplay content={report} />
               </>

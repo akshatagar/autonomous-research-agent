@@ -3,10 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as research_router
 from api.auth import router as auth_router
 from db.database import engine
-from dotenv import load_dotenv
 from db import models
 
-load_dotenv()
 
 models.Base.metadata.create_all(bind=engine)
 

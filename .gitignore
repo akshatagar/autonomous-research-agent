@@ -2,5 +2,6 @@ venv/
 .venv/
 
 .env
+.env.docker
 
 __pycache__
